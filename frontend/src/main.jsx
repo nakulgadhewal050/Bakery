@@ -22,11 +22,19 @@ axios.defaults.withCredentials = true;
 axios.interceptors.request.use((config) => {
   const adminToken = localStorage.getItem("adminToken");
   const userToken = localStorage.getItem("userToken");
+  const authToken = localStorage.getItem("authToken");
+  const fallbackToken = localStorage.getItem("token");
 
-  if (adminToken) {
+  const requestUrl = config.url || "";
+  const isAdminApiCall = requestUrl.includes("/api/admin");
+
+  if (isAdminApiCall && adminToken) {
     config.headers.Authorization = `Bearer ${adminToken}`;
-  } else if (userToken) {
-    config.headers.Authorization = `Bearer ${userToken}`;
+  } else if (userToken || authToken || fallbackToken) {
+    const resolvedUserToken = userToken || authToken || fallbackToken;
+    config.headers.Authorization = `Bearer ${resolvedUserToken}`;
+  } else if (adminToken) {
+    config.headers.Authorization = `Bearer ${adminToken}`;
   }
 
   return config;

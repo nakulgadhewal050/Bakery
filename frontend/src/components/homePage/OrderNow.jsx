@@ -228,16 +228,28 @@ const OrderNow = () => {
     return item.image || "/Image/default.avif";
   };
 
+  const getUserAuthToken = () => {
+    const explicitUserToken =
+      localStorage.getItem("userToken") ||
+      localStorage.getItem("authToken") ||
+      sessionStorage.getItem("userToken") ||
+      sessionStorage.getItem("authToken");
+
+    if (explicitUserToken) return explicitUserToken;
+
+    // Fallback to generic token only when an admin token is not present.
+    const hasAdminToken =
+      localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
+    if (hasAdminToken) return null;
+
+    return localStorage.getItem("token") || sessionStorage.getItem("token");
+  };
+
   useEffect(() => {
     const checkAuth = () => {
       setIsCheckingAuth(true);
 
-      // Check all possible token storage locations
-      const token =
-        localStorage.getItem("token") ||
-        localStorage.getItem("authToken") ||
-        sessionStorage.getItem("token") ||
-        sessionStorage.getItem("authToken");
+      const token = getUserAuthToken();
 
       console.log(
         "🔍 Checking authentication - Token found:",
@@ -293,12 +305,7 @@ const OrderNow = () => {
   };
 
   const handlePayment = async () => {
-    // Check token again
-    const token =
-      localStorage.getItem("token") ||
-      localStorage.getItem("authToken") ||
-      sessionStorage.getItem("token") ||
-      sessionStorage.getItem("authToken");
+    const token = getUserAuthToken();
 
     if (!token) {
       toast.error("Session expired. Please login again.");

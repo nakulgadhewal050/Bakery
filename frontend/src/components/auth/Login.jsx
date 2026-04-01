@@ -70,9 +70,14 @@ const Login = () => {
 
         console.log("✅ Admin login response:", response.data);
 
-        // Store admin tokens
+        // Store only admin token keys to avoid mixing with user checkout auth.
         localStorage.setItem("adminToken", response.data.token);
-        localStorage.setItem("token", response.data.token); // For compatibility
+        localStorage.removeItem("token");
+        localStorage.removeItem("userToken");
+        localStorage.removeItem("authToken");
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("userToken");
+        sessionStorage.removeItem("authToken");
 
         localStorage.setItem(
           "adminInfo",
@@ -94,7 +99,11 @@ const Login = () => {
 
         console.log("✅ User login response:", response.data);
 
-        // Store user tokens - CRITICAL FIX: Store with multiple keys
+        // Ensure admin session keys do not override user-only API calls.
+        localStorage.removeItem("adminToken");
+        localStorage.removeItem("adminInfo");
+
+        // Store user tokens
         localStorage.setItem("userToken", response.data.token);
         localStorage.setItem("token", response.data.token); // This is what OrderNow.jsx looks for
         localStorage.setItem("authToken", response.data.token); // Alternative key
