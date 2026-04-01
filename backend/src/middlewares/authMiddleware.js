@@ -26,9 +26,9 @@ const authMiddleware = async (req, res, next) => {
 
     const user = await User.findById(decoded.id).select("-password");
     if (!user) {
-      return res.status(404).json({
+      return res.status(401).json({
         success: false,
-        message: "User not found",
+        message: "Invalid session. Please login again.",
       });
     }
 

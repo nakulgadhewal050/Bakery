@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { selectCart } from "../redux/Slice";
@@ -7,6 +7,26 @@ import { toast } from "react-hot-toast";
 
 const razorpayKeyId =
   import.meta.env.VITE_RAZORPAY_KEY_ID || import.meta.env.VITE_RAZORPAY_KEY;
+
+const parseJwtPayload = (token) => {
+  if (!token || typeof token !== "string") return null;
+
+  try {
+    const payloadBase64 = token.split(".")[1];
+    if (!payloadBase64) return null;
+
+    const normalized = payloadBase64.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+};
+
+const isAdminRoleToken = (token) => {
+  const payload = parseJwtPayload(token);
+  return payload?.role === "admin" || payload?.role === "super-admin";
+};
 
 const OrderNow = () => {
   const dispatch = useDispatch();
@@ -228,27 +248,7 @@ const OrderNow = () => {
     return item.image || "/Image/default.avif";
   };
 
-  const parseJwtPayload = (token) => {
-    if (!token || typeof token !== "string") return null;
-
-    try {
-      const payloadBase64 = token.split(".")[1];
-      if (!payloadBase64) return null;
-
-      const normalized = payloadBase64.replace(/-/g, "+").replace(/_/g, "/");
-      const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-      return JSON.parse(atob(padded));
-    } catch {
-      return null;
-    }
-  };
-
-  const isAdminRoleToken = (token) => {
-    const payload = parseJwtPayload(token);
-    return payload?.role === "admin" || payload?.role === "super-admin";
-  };
-
-  const getUserAuthToken = () => {
+  const getUserAuthToken = useCallback(() => {
     const explicitUserToken =
       localStorage.getItem("userToken") ||
       localStorage.getItem("authToken") ||
@@ -270,7 +270,7 @@ const OrderNow = () => {
     }
 
     return genericToken;
-  };
+  }, []);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -320,7 +320,7 @@ const OrderNow = () => {
     };
 
     checkAuth();
-  }, [navigate]);
+  }, [navigate, getUserAuthToken]);
 
   const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
   const tax = subtotal * taxRate;
@@ -422,9 +422,12 @@ const OrderNow = () => {
       if (!orderData.success) {
         // Handle token expiration
         if (
+          orderData.message?.includes("User not found") ||
+          orderData.message?.includes("Invalid session") ||
           orderData.message?.includes("token") ||
           orderData.message?.includes("auth") ||
           orderData.message?.includes("unauthorized") ||
+          orderRes.status === 403 ||
           orderRes.status === 401
         ) {
           // Clear all auth data
