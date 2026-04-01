@@ -228,6 +228,26 @@ const OrderNow = () => {
     return item.image || "/Image/default.avif";
   };
 
+  const parseJwtPayload = (token) => {
+    if (!token || typeof token !== "string") return null;
+
+    try {
+      const payloadBase64 = token.split(".")[1];
+      if (!payloadBase64) return null;
+
+      const normalized = payloadBase64.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+      return JSON.parse(atob(padded));
+    } catch {
+      return null;
+    }
+  };
+
+  const isAdminRoleToken = (token) => {
+    const payload = parseJwtPayload(token);
+    return payload?.role === "admin" || payload?.role === "super-admin";
+  };
+
   const getUserAuthToken = () => {
     const explicitUserToken =
       localStorage.getItem("userToken") ||
@@ -242,7 +262,14 @@ const OrderNow = () => {
       localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
     if (hasAdminToken) return null;
 
-    return localStorage.getItem("token") || sessionStorage.getItem("token");
+    const genericToken =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
+
+    if (genericToken && isAdminRoleToken(genericToken)) {
+      return null;
+    }
+
+    return genericToken;
   };
 
   useEffect(() => {

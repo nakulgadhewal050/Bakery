@@ -17,6 +17,13 @@ const authMiddleware = async (req, res, next) => {
     const token = authHeader.replace("Bearer ", "");
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    if (decoded?.role && decoded.role !== "user") {
+      return res.status(403).json({
+        success: false,
+        message: "Please login with a user account",
+      });
+    }
+
     const user = await User.findById(decoded.id).select("-password");
     if (!user) {
       return res.status(404).json({
