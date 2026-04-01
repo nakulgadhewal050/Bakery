@@ -18,42 +18,19 @@ axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:
 // ✅ Allow cookies if ever needed
 axios.defaults.withCredentials = true;
 
-const parseJwtPayload = (token) => {
-  if (!token || typeof token !== "string") return null;
-
-  try {
-    const payloadBase64 = token.split(".")[1];
-    if (!payloadBase64) return null;
-
-    const normalized = payloadBase64.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-    return JSON.parse(atob(padded));
-  } catch {
-    return null;
-  }
-};
-
-const isAdminRoleToken = (token) => {
-  const payload = parseJwtPayload(token);
-  return payload?.role === "admin" || payload?.role === "super-admin";
-};
-
 // 🔐 AUTO ATTACH TOKEN (ADMIN / USER)
 axios.interceptors.request.use((config) => {
   const adminToken = localStorage.getItem("adminToken");
   const userToken = localStorage.getItem("userToken");
   const authToken = localStorage.getItem("authToken");
-  const fallbackToken = localStorage.getItem("token");
 
   const requestUrl = config.url || "";
   const isAdminApiCall = requestUrl.includes("/api/admin");
 
   if (isAdminApiCall && adminToken) {
     config.headers.Authorization = `Bearer ${adminToken}`;
-  } else if (userToken || authToken || fallbackToken) {
-    const safeFallbackToken =
-      fallbackToken && !isAdminRoleToken(fallbackToken) ? fallbackToken : null;
-    const resolvedUserToken = userToken || authToken || safeFallbackToken;
+  } else if (userToken || authToken) {
+    const resolvedUserToken = userToken || authToken;
 
     if (!resolvedUserToken) {
       return config;
