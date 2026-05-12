@@ -1,0 +1,13 @@
+
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://bakery-backend-fbgh.onrender.com/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
+  ]
+}
