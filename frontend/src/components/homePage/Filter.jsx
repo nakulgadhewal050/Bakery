@@ -47,19 +47,6 @@ export default function FilterPage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductModal, setShowProductModal] = useState(false);
 
-  // ⬇️⬇️⬇️
-  // EVERYTHING BELOW THIS IS 100% YOUR ORIGINAL CODE
-  // NOTHING ELSE TOUCHED
-  // ⬇️⬇️⬇️
-  // useEffect(() => {
-  //   fetch("/api/product/weights")
-  //     .then(res => res.json())
-  //     .then(data => {
-  //       if (data.success) {
-  //         setWeights(data.weights);
-  //       }
-  //     });
-  // }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -110,6 +97,15 @@ export default function FilterPage() {
             ...new Set(products.map((p) => p.category).filter(Boolean)),
           ];
           setCategories(uniqueCategories);
+
+          const uniqueFlavors = [
+            ...new Set(
+              products
+                .map((p) => (p.flavour || p.flavor || "").trim())
+                .filter(Boolean)
+            ),
+          ];
+          setFlavors(uniqueFlavors);
 
           // (rest unchanged)
         }
@@ -187,10 +183,8 @@ export default function FilterPage() {
     // Flavor filter
     if (filters.flavor) {
       filtered = filtered.filter((p) => {
-        const text = `${p.name} ${p.description} ${(p.tags || []).join(
-          " "
-        )}`.toLowerCase();
-        return text.includes(filters.flavor.toLowerCase());
+        const productFlavor = (p.flavour || p.flavor || "").toLowerCase();
+        return productFlavor === filters.flavor.toLowerCase();
       });
     }
 
